@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run Sonar Scan
-        uses: your-org/sonarqube-scan-action@v1
+        uses: chetanbothra/sonarqube-scan-action@v1
         with:
           project_key: my-service
           sonar_host: ${{ secrets.SONARQUBE_HOST }}
