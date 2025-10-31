@@ -1,0 +1,51 @@
+name: "SonarQube Scan Action"
+description: "Run SonarQube scan and enforce Quality Gate for projects"
+author: "chetanbothra"
+branding:
+  icon: check
+  color: blue
+
+inputs:
+  project_key:
+    description: "SonarQube project key"
+    required: true
+  sonar_host:
+    description: "SonarQube server URL (e.g. https://sonarqube.example.com)"
+    required: true
+  sonar_token:
+    description: "SonarQube token (store in secrets)"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Run SonarQube Scan
+      uses: kitabisa/sonarqube-action@v1.2.0
+      with:
+        host: ${{ inputs.sonar_host }}
+        login: ${{ inputs.sonar_token }}
+
+    - name: Install jq
+      shell: bash
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y jq
+
+    - name: Check SonarQube Quality Gate
+      shell: bash
+      run: |
+        status=$(curl -s -u "${{ inputs.sonar_token }}" \
+          "${{ inputs.sonar_host }}/api/qualitygates/project_status?projectKey=${{ inputs.project_key }}" \
+          | jq -r .projectStatus.status)
+
+        if [[ "$status" != "OK" ]]; then
+          echo "❌ SonarQube Quality Gate Failed"
+          exit 1
+        fi
+
+        echo "✅ SonarQube Quality Gate Passed"
